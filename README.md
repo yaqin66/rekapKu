@@ -29,7 +29,7 @@ Pastikan Anda sudah menginstal **Node.js** (direkomendasikan versi 18 atau 20 LT
 ### 1. Persiapan
 Clone repositori ini dan masuk ke dalam folder proyek:
 ```bash
-[git clone https://github.com/USERNAME_ANDA/rekapku.git](https://github.com/yaqin66/rekapKu.git)
+[git clone https://github.com/yaqin66/rekapKu.git]
 cd rekapku
 ```
 *(Ganti URL di atas dengan URL repositori GitHub Anda)*
