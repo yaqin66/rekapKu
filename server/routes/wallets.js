@@ -1,89 +1,104 @@
 import express from 'express';
-import db from '../db.js';
+import pool from '../db.js';
+import { verifyGoogleToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET all wallets
-router.get('/', (req, res) => {
+// Semua rute dompet wajib menyertakan token Google
+router.use(verifyGoogleToken);
+
+// GET all wallets for current user
+router.get('/', async (req, res) => {
   try {
-    const wallets = db.prepare('SELECT * FROM wallets').all();
-    res.json(wallets);
+    const { rows } = await pool.query(
+      'SELECT * FROM wallets WHERE user_email = $1 ORDER BY created_at ASC',
+      [req.user_email]
+    );
+    res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // POST a new wallet
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { id, name, icon, color, balance } = req.body;
   try {
-    const stmt = db.prepare('INSERT INTO wallets (id, name, icon, color, balance) VALUES (?, ?, ?, ?, ?)');
-    stmt.run(id, name, icon, color, balance || 0);
-    const newWallet = db.prepare('SELECT * FROM wallets WHERE id = ?').get(id);
-    res.status(201).json(newWallet);
+    await pool.query(
+      'INSERT INTO wallets (id, name, icon, color, balance, user_email) VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, name, icon, color, balance || 0, req.user_email]
+    );
+    const { rows } = await pool.query('SELECT * FROM wallets WHERE id = $1 AND user_email = $2', [id, req.user_email]);
+    res.status(201).json(rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // POST a transfer between wallets
-router.post('/transfer', (req, res) => {
+router.post('/transfer', async (req, res) => {
   const { fromId, toId, amount } = req.body;
   if (!fromId || !toId || !amount || amount <= 0) {
     return res.status(400).json({ error: 'Invalid transfer data' });
   }
 
+  const client = await pool.connect();
   try {
-    const transferTransaction = db.transaction(() => {
-      // Check if wallets exist and have enough balance (optional, but good practice)
-      const fromWallet = db.prepare('SELECT balance FROM wallets WHERE id = ?').get(fromId);
-      const toWallet = db.prepare('SELECT balance FROM wallets WHERE id = ?').get(toId);
+    await client.query('BEGIN');
 
-      if (!fromWallet || !toWallet) throw new Error('Wallet not found');
-      if (fromWallet.balance < amount) throw new Error('Insufficient balance');
+    const { rows: [fromWallet] } = await client.query('SELECT balance FROM wallets WHERE id = $1 AND user_email = $2', [fromId, req.user_email]);
+    const { rows: [toWallet] } = await client.query('SELECT balance FROM wallets WHERE id = $1 AND user_email = $2', [toId, req.user_email]);
 
-      db.prepare('UPDATE wallets SET balance = balance - ? WHERE id = ?').run(amount, fromId);
-      db.prepare('UPDATE wallets SET balance = balance + ? WHERE id = ?').run(amount, toId);
-    });
+    if (!fromWallet || !toWallet) throw new Error('Wallet not found or unauthorized');
+    if (parseFloat(fromWallet.balance) < amount) throw new Error('Insufficient balance');
 
-    transferTransaction();
+    await client.query('UPDATE wallets SET balance = balance - $1 WHERE id = $2 AND user_email = $3', [amount, fromId, req.user_email]);
+    await client.query('UPDATE wallets SET balance = balance + $1 WHERE id = $2 AND user_email = $3', [amount, toId, req.user_email]);
+
+    await client.query('COMMIT');
     res.json({ success: true });
   } catch (error) {
+    await client.query('ROLLBACK');
     res.status(400).json({ error: error.message });
+  } finally {
+    client.release();
   }
 });
 
 // PUT (update) a wallet
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { name, icon, color, balance } = req.body;
   try {
-    const stmt = db.prepare('UPDATE wallets SET name = ?, icon = ?, color = ?, balance = ? WHERE id = ?');
-    const result = stmt.run(name, icon, color, balance, id);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Wallet not found' });
+    const result = await pool.query(
+      'UPDATE wallets SET name = $1, icon = $2, color = $3, balance = $4 WHERE id = $5 AND user_email = $6',
+      [name, icon, color, balance, id, req.user_email]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Wallet not found or unauthorized' });
     }
-    const updatedWallet = db.prepare('SELECT * FROM wallets WHERE id = ?').get(id);
-    res.json(updatedWallet);
+    const { rows } = await pool.query('SELECT * FROM wallets WHERE id = $1 AND user_email = $2', [id, req.user_email]);
+    res.json(rows[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // DELETE a wallet
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    // First, check if there are any transactions associated with this wallet
-    const txCount = db.prepare('SELECT COUNT(*) as count FROM transactions WHERE walletId = ?').get(id).count;
-    if (txCount > 0) {
+    const { rows } = await pool.query(
+      'SELECT COUNT(*) as count FROM transactions WHERE "walletId" = $1 AND user_email = $2',
+      [id, req.user_email]
+    );
+    if (parseInt(rows[0].count) > 0) {
       return res.status(400).json({ error: 'Cannot delete wallet with existing transactions' });
     }
 
-    const stmt = db.prepare('DELETE FROM wallets WHERE id = ?');
-    const result = stmt.run(id);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Wallet not found' });
+    const result = await pool.query('DELETE FROM wallets WHERE id = $1 AND user_email = $2', [id, req.user_email]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Wallet not found or unauthorized' });
     }
     res.status(204).send();
   } catch (error) {

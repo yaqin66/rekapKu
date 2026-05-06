@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -8,6 +11,7 @@ import budgetsRouter from './routes/budgets.js';
 import billsRouter from './routes/bills.js';
 import goalsRouter from './routes/goals.js';
 import debtsRouter from './routes/debts.js';
+import authRouter from './routes/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,6 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api/auth', authRouter);
 app.use('/api/wallets', walletsRouter);
 app.use('/api/transactions', transactionsRouter);
 app.use('/api/budgets', budgetsRouter);

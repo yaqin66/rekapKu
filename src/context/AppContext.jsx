@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPost, apiPut, apiDelete } from '../utils/api';
 import { generateId } from '../utils/formatters';
+import { useAuth } from './AuthContext';
 
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [budgets, setBudgets] = useState([]);
@@ -18,8 +20,19 @@ export function AppProvider({ children }) {
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const toggleBalance = useCallback(() => setIsBalanceHidden(prev => !prev), []);
 
-  // Load from API on mount
+  // Load from API on mount atau saat user berganti
   useEffect(() => {
+    if (!user) {
+      // Jika logout, kosongkan semua data dari memori
+      setTransactions([]);
+      setWallets([]);
+      setBudgets([]);
+      setBills([]);
+      setGoals([]);
+      setDebts([]);
+      return;
+    }
+
     async function loadData() {
       try {
         setIsLoading(true);
@@ -46,7 +59,7 @@ export function AppProvider({ children }) {
       }
     }
     loadData();
-  }, []);
+  }, [user]);
 
   // Async actions wrapping API calls
 

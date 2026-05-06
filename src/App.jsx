@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AppProvider } from './context/AppContext';
+import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Budget from './pages/Budget';
@@ -13,10 +15,27 @@ import Goals from './pages/Goals';
 import Debts from './pages/Debts';
 import Calendar from './pages/Calendar';
 import PinScreen from './pages/PinScreen';
+import Settings from './pages/Settings';
+
+// Komponen Pelindung (Mengarahkan user ke /login jika belum login)
+function ProtectedRoute({ children }) {
+  const { user, isAuthLoading } = useAuth();
+  
+  if (isAuthLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-500">Memuat...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+}
 
 export default function App() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [hasPin, setHasPin] = useState(false);
+  const { user } = useAuth(); // Gunakan user untuk mencegah PinScreen muncul sebelum login
 
   useEffect(() => {
     const pin = localStorage.getItem('app_pin');
@@ -26,14 +45,12 @@ export default function App() {
       setIsUnlocked(true);
     }
     
-    // Listen for custom event when PIN is changed from Header
     const handlePinUpdate = () => {
       const newPin = localStorage.getItem('app_pin');
       setHasPin(!!newPin);
     };
     window.addEventListener('pin_updated', handlePinUpdate);
     
-    // Listen for custom lock event
     const handleLock = () => {
       if (localStorage.getItem('app_pin')) {
         setIsUnlocked(false);
@@ -47,7 +64,7 @@ export default function App() {
     };
   }, []);
 
-  if (hasPin && !isUnlocked) {
+  if (user && hasPin && !isUnlocked) {
     return (
       <ThemeProvider>
         <PinScreen onUnlock={() => setIsUnlocked(true)} />
@@ -60,7 +77,10 @@ export default function App() {
       <AppProvider>
         <BrowserRouter>
           <Routes>
-            <Route element={<Layout />}>
+            <Route path="/login" element={<Login />} />
+            
+            {/* Semua halaman utama dibungkus ProtectedRoute */}
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/transactions" element={<Transactions />} />
               <Route path="/budget" element={<Budget />} />
@@ -70,6 +90,7 @@ export default function App() {
               <Route path="/debts" element={<Debts />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
           </Routes>
         </BrowserRouter>
