@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lock, Delete } from 'lucide-react';
+import { Lock, Delete, Wallet } from 'lucide-react';
 
 export default function PinScreen({ onUnlock }) {
   const [pin, setPin] = useState('');
@@ -30,14 +30,14 @@ export default function PinScreen({ onUnlock }) {
   }, [pin, correctPin, onUnlock]);
 
   return (
-    <div className="min-h-screen bg-dark-50 dark:bg-dark-950 flex flex-col items-center justify-center p-4 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-accent-50 dark:from-dark-950 dark:via-dark-900 dark:to-primary-950 flex flex-col items-center justify-center p-4 transition-colors">
       <div className="w-full max-w-sm flex flex-col items-center gap-8 animate-fadeIn">
-        <div className="w-16 h-16 rounded-2xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center shadow-inner">
+        <div className="w-16 h-16 rounded-2xl gradient-primary text-white flex items-center justify-center shadow-lg shadow-primary-500/30">
           <Lock className="w-8 h-8" />
         </div>
         
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-display font-bold">Masukkan PIN</h1>
+          <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">Masukkan PIN</h1>
           <p className="text-sm text-dark-500">Aplikasi RekapKu Anda terkunci</p>
         </div>
 
@@ -45,9 +45,9 @@ export default function PinScreen({ onUnlock }) {
           {[0, 1, 2, 3].map(i => (
             <div 
               key={i}
-              className={`w-4 h-4 rounded-full transition-colors duration-200 ${
+              className={`w-4 h-4 rounded-full transition-all duration-200 ${
                 pin.length > i 
-                  ? (error ? 'bg-red-500' : 'bg-primary-500') 
+                  ? (error ? 'bg-danger-500 scale-110' : 'bg-primary-500 scale-110') 
                   : 'bg-dark-200 dark:bg-dark-700'
               }`}
             />
@@ -59,7 +59,7 @@ export default function PinScreen({ onUnlock }) {
             <button
               key={num}
               onClick={() => handlePress(num.toString())}
-              className="h-16 rounded-2xl bg-white dark:bg-dark-800 text-2xl font-display font-bold hover:bg-dark-50 dark:hover:bg-dark-700 active:scale-95 transition-all shadow-sm border border-dark-100 dark:border-dark-700"
+              className="h-16 rounded-2xl bg-white/80 dark:bg-dark-800 text-2xl font-display font-bold hover:bg-primary-50 dark:hover:bg-dark-700 active:scale-95 transition-all shadow-sm border border-primary-100 dark:border-dark-700 backdrop-blur-sm"
             >
               {num}
             </button>
@@ -67,13 +67,13 @@ export default function PinScreen({ onUnlock }) {
           <div />
           <button
             onClick={() => handlePress('0')}
-            className="h-16 rounded-2xl bg-white dark:bg-dark-800 text-2xl font-display font-bold hover:bg-dark-50 dark:hover:bg-dark-700 active:scale-95 transition-all shadow-sm border border-dark-100 dark:border-dark-700"
+            className="h-16 rounded-2xl bg-white/80 dark:bg-dark-800 text-2xl font-display font-bold hover:bg-primary-50 dark:hover:bg-dark-700 active:scale-95 transition-all shadow-sm border border-primary-100 dark:border-dark-700 backdrop-blur-sm"
           >
             0
           </button>
           <button
             onClick={handleDelete}
-            className="h-16 rounded-2xl bg-white dark:bg-dark-800 flex items-center justify-center text-dark-500 hover:bg-dark-50 dark:hover:bg-dark-700 active:scale-95 transition-all shadow-sm border border-dark-100 dark:border-dark-700"
+            className="h-16 rounded-2xl bg-white/80 dark:bg-dark-800 flex items-center justify-center text-dark-500 hover:bg-primary-50 dark:hover:bg-dark-700 active:scale-95 transition-all shadow-sm border border-primary-100 dark:border-dark-700 backdrop-blur-sm"
           >
             <Delete className="w-6 h-6" />
           </button>

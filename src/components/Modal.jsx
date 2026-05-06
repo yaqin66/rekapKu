@@ -27,16 +27,16 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
   const modalContent = (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark-900/40 backdrop-blur-sm animate-fadeIn"
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
-      <div className={`w-full ${maxWidth} bg-white dark:bg-dark-800 rounded-2xl shadow-2xl animate-scaleIn overflow-hidden`}>
+      <div className={`w-full ${maxWidth} bg-white dark:bg-dark-800 rounded-2xl shadow-2xl shadow-primary-500/10 animate-scaleIn overflow-hidden border border-primary-100/50 dark:border-dark-700`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-dark-200 dark:border-dark-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-primary-100 dark:border-dark-700">
           <h3 className="font-display font-semibold text-lg">{title}</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-dark-100 dark:hover:bg-dark-700 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-primary-50 dark:hover:bg-dark-700 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
