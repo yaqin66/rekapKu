@@ -13,6 +13,10 @@ export function AppProvider({ children }) {
   const [debts, setDebts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // State for hiding/showing balance globally
+  const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+  const toggleBalance = useCallback(() => setIsBalanceHidden(prev => !prev), []);
 
   // Load from API on mount
   useEffect(() => {
@@ -213,6 +217,8 @@ export function AppProvider({ children }) {
     getMonthlyStats,
     getTotalBalance,
     getCategorySpending,
+    isBalanceHidden,
+    toggleBalance,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

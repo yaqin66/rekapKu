@@ -13,7 +13,7 @@ import { formatCurrency, getMonthName } from '../utils/formatters';
 import { getCategoryById, EXPENSE_CATEGORIES } from '../utils/categories';
 
 export default function Dashboard() {
-  const { transactions, wallets, budgets, getMonthlyStats, getTotalBalance, getCategorySpending } = useApp();
+  const { transactions, wallets, budgets, getMonthlyStats, getTotalBalance, getCategorySpending, isBalanceHidden, toggleBalance } = useApp();
   const [showAddModal, setShowAddModal] = useState(false);
 
   const now = new Date();
@@ -82,18 +82,18 @@ export default function Dashboard() {
       {/* Page Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold">Dashboard</h1>
+          <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">Dashboard</h1>
           <p className="text-sm text-dark-500 dark:text-dark-400 mt-0.5">
             Ringkasan keuanganmu bulan {getMonthName(currentMonth)}
           </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl gradient-primary text-white font-medium text-sm hover:shadow-lg transition-all duration-200 active:scale-95"
+          className="cursor-pointer flex items-center gap-2 px-4 py-2.5 rounded-xl gradient-primary text-white font-medium text-sm hover:shadow-lg hover:shadow-primary-500/25 transition-all duration-200 active:scale-95"
           id="add-transaction-btn"
         >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Tambah Transaksi</span>
+          <Plus className="w-6 h-6" />
+          <span className="cursor-pointer hidden sm:inline">Tambah Transaksi</span>
         </button>
       </div>
 
@@ -104,6 +104,8 @@ export default function Dashboard() {
           amount={formatCurrency(getTotalBalance())}
           icon={Wallet}
           gradient="gradient-primary"
+          isHidden={isBalanceHidden}
+          onToggleHidden={toggleBalance}
         />
         <SummaryCard
           title="Pemasukan"
@@ -112,6 +114,7 @@ export default function Dashboard() {
           gradient="gradient-accent"
           trend={parseFloat(incomeTrend)}
           trendLabel="vs bulan lalu"
+          isHidden={isBalanceHidden}
         />
         <SummaryCard
           title="Pengeluaran"
@@ -120,12 +123,14 @@ export default function Dashboard() {
           gradient="gradient-danger"
           trend={parseFloat(expenseTrend) * -1}
           trendLabel="vs bulan lalu"
+          isHidden={isBalanceHidden}
         />
         <SummaryCard
           title="Sisa Bulan Ini"
           amount={formatCurrency(stats.balance)}
           icon={PiggyBank}
-          gradient="gradient-warning"
+          gradient="gradient-purple"
+          isHidden={isBalanceHidden}
         />
       </div>
 
@@ -168,7 +173,7 @@ export default function Dashboard() {
           </div>
           {budgets.length === 0 ? (
             <div className="text-center py-8">
-              <PiggyBank className="w-10 h-10 mx-auto text-dark-300 dark:text-dark-600 mb-2" />
+              <PiggyBank className="w-10 h-10 mx-auto text-primary-200 dark:text-dark-600 mb-2" />
               <p className="text-sm text-dark-400 dark:text-dark-500">Belum ada anggaran</p>
               <Link to="/budget" className="text-xs text-primary-500 hover:underline mt-1 inline-block">Buat anggaran</Link>
             </div>

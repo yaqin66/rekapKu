@@ -10,7 +10,7 @@ import goalsRouter from './routes/goals.js';
 import debtsRouter from './routes/debts.js';
 
 const app = express();
-const PORT = process.env.PORT || 5173;
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());

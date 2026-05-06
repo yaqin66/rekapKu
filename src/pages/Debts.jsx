@@ -3,11 +3,18 @@ import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/formatters';
 import { Plus, Edit2, Trash2, Handshake } from 'lucide-react';
 import Modal from '../components/Modal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 export default function Debts() {
   const { debts, dispatch } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDebt, setEditingDebt] = useState(null);
+  
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentDebt, setPaymentDebt] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  
+  const [deleteId, setDeleteId] = useState(null);
   
   const [formData, setFormData] = useState({
     type: 'debt',
@@ -48,10 +55,36 @@ export default function Debts() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Hapus catatan utang/piutang ini?')) {
-      await dispatch({ type: 'DELETE_DEBT', payload: id });
+  const handleDelete = async () => {
+    if (deleteId) {
+      await dispatch({ type: 'DELETE_DEBT', payload: deleteId });
+      setDeleteId(null);
     }
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!paymentDebt) return;
+    
+    const amountToPay = parseFloat(paymentAmount);
+    if (isNaN(amountToPay) || amountToPay <= 0) return;
+
+    const newRemainingAmount = Math.max(0, paymentDebt.remainingAmount - amountToPay);
+    
+    await dispatch({ 
+      type: 'UPDATE_DEBT', 
+      payload: { ...paymentDebt, remainingAmount: newRemainingAmount } 
+    });
+    
+    setIsPaymentModalOpen(false);
+    setPaymentDebt(null);
+    setPaymentAmount('');
+  };
+  
+  const openPayment = (debt) => {
+    setPaymentDebt(debt);
+    setPaymentAmount('');
+    setIsPaymentModalOpen(true);
   };
 
   return (
@@ -112,10 +145,15 @@ export default function Debts() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-dark-100 dark:border-dark-700 flex gap-2 justify-end">
+                {!isPaidOff && (
+                  <button onClick={() => openPayment(debt)} className="btn btn-sm bg-primary-50 text-primary-600 hover:bg-primary-100 dark:bg-primary-900/30 dark:hover:bg-primary-900/50">
+                    Bayar
+                  </button>
+                )}
                 <button onClick={() => openEdit(debt)} className="btn btn-sm bg-dark-100 text-dark-700 hover:bg-dark-200">
                   <Edit2 className="w-4 h-4 mr-1" /> Edit
                 </button>
-                <button onClick={() => handleDelete(debt.id)} className="btn btn-sm bg-danger-50 text-danger-600 hover:bg-danger-100 dark:bg-danger-900/30 dark:hover:bg-danger-900/50">
+                <button onClick={() => setDeleteId(debt.id)} className="btn btn-sm bg-danger-50 text-danger-600 hover:bg-danger-100 dark:bg-danger-900/30 dark:hover:bg-danger-900/50">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -216,6 +254,47 @@ export default function Debts() {
           </div>
         </form>
       </Modal>
+
+      <Modal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        title="Pembayaran Utang/Piutang"
+      >
+        <form onSubmit={handlePaymentSubmit} className="space-y-4">
+          <div className="p-3 bg-dark-50 dark:bg-dark-900 rounded-lg mb-4">
+            <p className="text-sm text-dark-500">Nama: <span className="font-semibold text-dark-900 dark:text-dark-100">{paymentDebt?.name}</span></p>
+            <p className="text-sm text-dark-500">Sisa Dibayar: <span className="font-semibold text-primary-500">{formatCurrency(paymentDebt?.remainingAmount || 0)}</span></p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Nominal Pembayaran (Rp)</label>
+            <input
+              type="number"
+              required
+              min="1"
+              max={paymentDebt?.remainingAmount}
+              className="input w-full"
+              value={paymentAmount}
+              onChange={e => setPaymentAmount(e.target.value)}
+              placeholder="Contoh: 500000"
+            />
+          </div>
+          <div className="pt-4 flex justify-end gap-3">
+            <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="cursor-pointer btn px-3 py-1 rounded-lg bg-dark-100 text-dark-700 hover:bg-dark-200">
+              Batal
+            </button>
+            <button type="submit" className="cursor-pointer btn btn-primary">
+              Bayar
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        itemName="catatan utang/piutang"
+      />
     </div>
   );
 }
