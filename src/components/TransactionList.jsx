@@ -59,7 +59,7 @@ export default function TransactionList({ transactions, onEdit, onDelete }) {
 
                   <div className="text-right flex-shrink-0">
                     <p className={`font-semibold text-sm ${
-                      isIncome ? 'text-primary-600 dark:text-primary-400' : 'text-red-500 dark:text-red-400'
+                      isIncome ? 'text-accent-600 dark:text-accent-400' : 'text-rose-500 dark:text-rose-400'
                     }`}>
                       {isIncome ? '+' : '-'}{formatCurrency(tx.amount)}
                     </p>

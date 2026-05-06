@@ -11,6 +11,7 @@ import Reports from './pages/Reports';
 import Bills from './pages/Bills';
 import Goals from './pages/Goals';
 import Debts from './pages/Debts';
+import Calendar from './pages/Calendar';
 import PinScreen from './pages/PinScreen';
 
 export default function App() {
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="/goals" element={<Goals />} />
               <Route path="/bills" element={<Bills />} />
               <Route path="/debts" element={<Debts />} />
+              <Route path="/calendar" element={<Calendar />} />
               <Route path="/reports" element={<Reports />} />
             </Route>
           </Routes>
