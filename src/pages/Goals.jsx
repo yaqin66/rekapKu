@@ -3,15 +3,19 @@ import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/formatters';
 import { Plus, Edit2, Trash2, Target, PlusCircle } from 'lucide-react';
 import Modal from '../components/Modal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 export default function Goals() {
-  const { goals, dispatch } = useApp();
+  const { goals, wallets, dispatch } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
   
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   const [topUpGoal, setTopUpGoal] = useState(null);
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [topUpWalletId, setTopUpWalletId] = useState('');
+  
+  const [deleteId, setDeleteId] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -54,17 +58,36 @@ export default function Goals() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Hapus tujuan ini?')) {
-      await dispatch({ type: 'DELETE_GOAL', payload: id });
+  const handleDelete = async () => {
+    if (deleteId) {
+      await dispatch({ type: 'DELETE_GOAL', payload: deleteId });
+      setDeleteId(null);
     }
   };
 
   const handleTopUpSubmit = async (e) => {
     e.preventDefault();
-    if (!topUpGoal) return;
+    if (!topUpGoal || !topUpWalletId) {
+      alert('Pilih dompet terlebih dahulu!');
+      return;
+    }
     
-    const newAmount = topUpGoal.currentAmount + parseFloat(topUpAmount);
+    const amountAdded = parseFloat(topUpAmount);
+    
+    // Create an expense transaction to deduct the wallet balance
+    await dispatch({
+      type: 'ADD_TRANSACTION',
+      payload: {
+        type: 'expense',
+        amount: amountAdded,
+        categoryId: 'other_expense',
+        walletId: topUpWalletId,
+        description: `Tambah Dana Tujuan: ${topUpGoal.name}`,
+        date: new Date().toISOString()
+      }
+    });
+
+    const newAmount = topUpGoal.currentAmount + amountAdded;
     await dispatch({ 
       type: 'UPDATE_GOAL', 
       payload: { ...topUpGoal, currentAmount: newAmount } 
@@ -78,6 +101,7 @@ export default function Goals() {
   const openTopUp = (goal) => {
     setTopUpGoal(goal);
     setTopUpAmount('');
+    setTopUpWalletId(wallets.length > 0 ? wallets[0].id : '');
     setIsTopUpModalOpen(true);
   };
 
@@ -121,7 +145,7 @@ export default function Goals() {
                   <button onClick={() => openEdit(goal)} className="p-1 text-dark-400 hover:text-primary-500 transition-colors">
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDelete(goal.id)} className="p-1 text-dark-400 hover:text-danger-500 transition-colors">
+                  <button onClick={() => setDeleteId(goal.id)} className="p-1 text-dark-400 hover:text-danger-500 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -230,6 +254,20 @@ export default function Goals() {
             <p className="text-sm text-dark-500">Terkumpul saat ini: <span className="font-semibold text-primary-500">{formatCurrency(topUpGoal?.currentAmount || 0)}</span></p>
           </div>
           <div>
+            <label className="block text-sm font-medium mb-1">Ambil dari Dompet</label>
+            <select
+              required
+              className="input w-full"
+              value={topUpWalletId}
+              onChange={e => setTopUpWalletId(e.target.value)}
+            >
+              <option value="" disabled>Pilih Dompet</option>
+              {wallets.map(w => (
+                <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance)})</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Nominal yang ditambahkan (Rp)</label>
             <input
               type="number"
@@ -251,6 +289,13 @@ export default function Goals() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        itemName="tujuan keuangan"
+      />
     </div>
   );
 }

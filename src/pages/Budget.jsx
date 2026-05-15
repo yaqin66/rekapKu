@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import BudgetCard from '../components/BudgetCard';
 import Modal from '../components/Modal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { EXPENSE_CATEGORIES } from '../utils/categories';
 import { formatCurrency, getMonthName } from '../utils/formatters';
 
@@ -66,6 +67,7 @@ export default function Budget() {
   const { budgets, dispatch, getCategorySpending } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -73,9 +75,10 @@ export default function Budget() {
   const totalBudget = useMemo(() => budgets.reduce((s, b) => s + b.limit, 0), [budgets]);
   const totalSpent = useMemo(() => budgets.reduce((s, b) => s + getCategorySpending(b.categoryId, currentYear, currentMonth), 0), [budgets, getCategorySpending, currentYear, currentMonth]);
 
-  const handleDelete = (id) => {
-    if (window.confirm('Yakin ingin menghapus anggaran ini?')) {
-      dispatch({ type: 'DELETE_BUDGET', payload: id });
+  const handleDeleteConfirm = () => {
+    if (deleteId) {
+      dispatch({ type: 'DELETE_BUDGET', payload: deleteId });
+      setDeleteId(null);
     }
   };
 
@@ -95,13 +98,13 @@ export default function Budget() {
       <div className="glass-card rounded-2xl p-5">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div><p className="text-xs text-dark-500 dark:text-dark-400 mb-1">Total Anggaran</p><p className="font-bold text-lg font-display">{formatCurrency(totalBudget)}</p></div>
-          <div><p className="text-xs text-dark-500 dark:text-dark-400 mb-1">Terpakai</p><p className="font-bold text-lg font-display text-red-500">{formatCurrency(totalSpent)}</p></div>
+          <div><p className="text-xs text-dark-500 dark:text-dark-400 mb-1">Terpakai</p><p className="font-bold text-lg font-display text-rose-500">{formatCurrency(totalSpent)}</p></div>
           <div><p className="text-xs text-dark-500 dark:text-dark-400 mb-1">Sisa</p><p className={`font-bold text-lg font-display ${totalBudget - totalSpent >= 0 ? 'text-primary-600 dark:text-primary-400' : 'text-red-500'}`}>{formatCurrency(totalBudget - totalSpent)}</p></div>
         </div>
         {totalBudget > 0 && (
           <div className="mt-4">
             <div className="w-full h-3 bg-dark-100 dark:bg-dark-700 rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min((totalSpent / totalBudget) * 100, 100)}%`, background: totalSpent > totalBudget ? '#ef4444' : 'linear-gradient(90deg, #22c55e, #16a34a)' }} />
+              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min((totalSpent / totalBudget) * 100, 100)}%`, background: totalSpent > totalBudget ? '#f43f5e' : 'linear-gradient(90deg, #6366f1, #4f46e5)' }} />
             </div>
             <p className="text-xs text-dark-400 mt-1 text-right">{((totalSpent / totalBudget) * 100).toFixed(1)}% terpakai</p>
           </div>
@@ -118,7 +121,7 @@ export default function Budget() {
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {budgets.map(budget => (
-            <BudgetCard key={budget.id} budget={budget} spent={getCategorySpending(budget.categoryId, currentYear, currentMonth)} onDelete={handleDelete} />
+            <BudgetCard key={budget.id} budget={budget} spent={getCategorySpending(budget.categoryId, currentYear, currentMonth)} onDelete={setDeleteId} />
           ))}
         </div>
       )}
@@ -126,6 +129,13 @@ export default function Budget() {
       <Modal isOpen={showModal} onClose={() => { setShowModal(false); setEditData(null); }} title={editData ? 'Edit Anggaran' : 'Tambah Anggaran'}>
         <BudgetForm onClose={() => { setShowModal(false); setEditData(null); }} editData={editData} existingCategoryIds={budgets.map(b => b.categoryId)} />
       </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDeleteConfirm}
+        itemName="anggaran"
+      />
     </div>
   );
 }
