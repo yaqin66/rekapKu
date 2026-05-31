@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../utils/categories';
+import DatePicker from './DatePicker';
+import WalletSelect from './WalletSelect';
 
 export default function TransactionForm({ onClose, editData }) {
   const { dispatch, wallets } = useApp();
@@ -112,28 +114,21 @@ export default function TransactionForm({ onClose, editData }) {
       {/* Wallet */}
       <div>
         <label className={labelClass}>Dompet</label>
-        <select
+        <WalletSelect
+          wallets={wallets}
           value={form.walletId}
-          onChange={e => setForm(f => ({ ...f, walletId: e.target.value }))}
+          onChange={(newWalletId) => setForm(f => ({ ...f, walletId: newWalletId }))}
           className={inputClass}
-          required
-        >
-          <option value="">Pilih dompet</option>
-          {wallets.map(w => (
-            <option key={w.id} value={w.id}>{w.name}</option>
-          ))}
-        </select>
+        />
       </div>
 
       {/* Date */}
       <div>
         <label className={labelClass}>Tanggal</label>
-        <input
-          type="date"
+        <DatePicker
           value={form.date}
-          onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+          onChange={(newDate) => setForm(f => ({ ...f, date: newDate }))}
           className={inputClass}
-          required
         />
       </div>
 

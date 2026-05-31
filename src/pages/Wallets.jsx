@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import WalletCard from '../components/WalletCard';
 import Modal from '../components/Modal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import WalletSelect from '../components/WalletSelect';
 import { WALLET_ICONS } from '../utils/categories';
 import { formatCurrency } from '../utils/formatters';
 
@@ -111,15 +112,22 @@ function TransferForm({ onClose }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-dark-600 dark:text-dark-300 mb-1.5">Dari Dompet</label>
-        <select value={form.fromId} onChange={e => setForm(f => ({ ...f, fromId: e.target.value }))} className={inputClass} required>
-          {wallets.map(w => <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance)})</option>)}
-        </select>
+        <WalletSelect
+          wallets={wallets}
+          value={form.fromId}
+          onChange={(newId) => setForm(f => ({ ...f, fromId: newId }))}
+          className={inputClass}
+          showBalance={true}
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-dark-600 dark:text-dark-300 mb-1.5">Ke Dompet</label>
-        <select value={form.toId} onChange={e => setForm(f => ({ ...f, toId: e.target.value }))} className={inputClass} required>
-          {wallets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-        </select>
+        <WalletSelect
+          wallets={wallets}
+          value={form.toId}
+          onChange={(newId) => setForm(f => ({ ...f, toId: newId }))}
+          className={inputClass}
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-dark-600 dark:text-dark-300 mb-1.5">Nominal Transfer (Rp)</label>

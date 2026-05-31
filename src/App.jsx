@@ -16,6 +16,7 @@ import Debts from './pages/Debts';
 import Calendar from './pages/Calendar';
 import PinScreen from './pages/PinScreen';
 import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 
 // Komponen Pelindung (Mengarahkan user ke /login jika belum login)
 function ProtectedRoute({ children }) {
@@ -92,6 +93,9 @@ export default function App() {
               <Route path="/reports" element={<Reports />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
+            
+            {/* Halaman 404 Not Found */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </AppProvider>

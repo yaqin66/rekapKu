@@ -1,7 +1,73 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/formatters';
-import { Plus, Edit2, Trash2, Target, PlusCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Target, PlusCircle, ChevronDown, Check } from 'lucide-react';
+
+// Custom Wallet Dropdown Component
+function WalletDropdown({ value, onChange, wallets }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedWallet = wallets.find(w => w.id === value);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <div 
+        className="input w-full flex items-center justify-between cursor-pointer focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+        onClick={() => setIsOpen(!isOpen)}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+        }}
+      >
+        <span className={selectedWallet ? "text-dark-900 dark:text-dark-100" : "text-dark-500"}>
+          {selectedWallet ? `${selectedWallet.name} (${formatCurrency(selectedWallet.balance)})` : "Pilih Dompet"}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-dark-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-dark-800 border border-dark-200 dark:border-dark-700 rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
+          <div className="max-h-60 overflow-y-auto">
+            {wallets.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-dark-500 text-center">
+                Belum ada dompet
+              </div>
+            ) : (
+              wallets.map((w) => (
+                <div
+                  key={w.id}
+                  className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center justify-between
+                    ${value === w.id ? 'bg-primary-50/50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-medium' : 'text-dark-700 dark:text-dark-300'}`}
+                  onClick={() => {
+                    onChange(w.id);
+                    setIsOpen(false);
+                  }}
+                >
+                  <span>{w.name} <span className={`font-normal ml-1 ${value === w.id ? 'text-primary-500/80' : 'text-dark-400'}`}>({formatCurrency(w.balance)})</span></span>
+                  {value === w.id && <Check className="w-4 h-4" />}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 import Modal from '../components/Modal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
@@ -255,17 +321,11 @@ export default function Goals() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Ambil dari Dompet</label>
-            <select
-              required
-              className="input w-full"
-              value={topUpWalletId}
-              onChange={e => setTopUpWalletId(e.target.value)}
-            >
-              <option value="" disabled>Pilih Dompet</option>
-              {wallets.map(w => (
-                <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance)})</option>
-              ))}
-            </select>
+            <WalletDropdown 
+              value={topUpWalletId} 
+              onChange={setTopUpWalletId} 
+              wallets={wallets} 
+            />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Nominal yang ditambahkan (Rp)</label>
