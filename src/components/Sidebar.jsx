@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, ArrowLeftRight, PiggyBank, Wallet, BarChart3,
-  ChevronLeft, X, Target, CalendarClock, Handshake
+  ChevronLeft, X, Target, CalendarClock, Handshake, Calendar
 } from 'lucide-react';
 
 const navItems = [
@@ -12,6 +12,7 @@ const navItems = [
   { to: '/goals', label: 'Tujuan', icon: Target },
   { to: '/bills', label: 'Tagihan', icon: CalendarClock },
   { to: '/debts', label: 'Utang Piutang', icon: Handshake },
+  { to: '/calendar', label: 'Kalender', icon: Calendar },
   { to: '/reports', label: 'Laporan', icon: BarChart3 },
 ];
 
@@ -24,7 +25,7 @@ export default function Sidebar({ isOpen, onToggle }) {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={onToggle}
         />
       )}
@@ -34,7 +35,8 @@ export default function Sidebar({ isOpen, onToggle }) {
         className={`
           fixed top-0 left-0 h-full z-50 flex flex-col
           transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]
-          bg-white dark:bg-dark-900 border-r border-dark-200 dark:border-dark-700
+          bg-white/95 dark:bg-dark-900/95 backdrop-blur-xl
+          border-r border-primary-100 dark:border-dark-700
           overflow-hidden
           ${isOpen
             ? 'w-64 shadow-xl lg:shadow-md translate-x-0'
@@ -43,18 +45,18 @@ export default function Sidebar({ isOpen, onToggle }) {
         `}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-dark-200 dark:border-dark-700 flex-shrink-0">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-primary-100 dark:border-dark-700 flex-shrink-0">
           <div className={`flex items-center ${!isOpen && 'lg:justify-center lg:w-full'}`}>
-            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/25">
               <Wallet className="w-5 h-5 text-white" />
             </div>
-            <span className={`font-display font-bold text-lg bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent whitespace-nowrap overflow-hidden transition-all duration-500 ${!isOpen ? 'lg:max-w-0 lg:opacity-0 lg:ml-0' : 'lg:max-w-[200px] lg:opacity-100 ml-3'}`}>
+            <span className={`font-display font-bold text-lg bg-gradient-to-r from-primary-500 via-primary-400 to-accent-500 bg-clip-text text-transparent whitespace-nowrap overflow-hidden transition-all duration-500 ${!isOpen ? 'lg:max-w-0 lg:opacity-0 lg:ml-0' : 'lg:max-w-[200px] lg:opacity-100 ml-3'}`}>
               RekapKu
             </span>
           </div>
           <button
             onClick={onToggle}
-            className="p-1.5 rounded-lg hover:bg-dark-100 dark:hover:bg-dark-800 transition-colors lg:hidden"
+            className="p-1.5 rounded-lg hover:bg-primary-50 dark:hover:bg-dark-800 transition-colors lg:hidden"
           >
             <X className="w-5 h-5" />
           </button>
@@ -74,8 +76,8 @@ export default function Sidebar({ isOpen, onToggle }) {
                   flex items-center px-3 py-2.5 rounded-xl
                   transition-all duration-200 group relative
                   ${isActive
-                    ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 font-semibold'
-                    : 'text-dark-500 dark:text-dark-400 hover:bg-dark-100 dark:hover:bg-dark-800 hover:text-dark-900 dark:hover:text-dark-100'
+                    ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 font-semibold shadow-sm'
+                    : 'text-dark-500 dark:text-dark-400 hover:bg-primary-50/50 dark:hover:bg-dark-800 hover:text-primary-600 dark:hover:text-primary-400'
                   }
                   ${!isOpen && 'lg:justify-center lg:px-0'}
                 `}
@@ -88,7 +90,7 @@ export default function Sidebar({ isOpen, onToggle }) {
                   {item.label}
                 </span>
                 {!isOpen && (
-                  <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-dark-900 text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden lg:block z-50">
+                  <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-primary-600 text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden lg:block z-50 shadow-lg">
                     {item.label}
                   </div>
                 )}
@@ -103,7 +105,7 @@ export default function Sidebar({ isOpen, onToggle }) {
             onClick={onToggle}
             className={`
               flex items-center w-full px-3 py-2.5 rounded-xl
-              text-dark-400 hover:bg-dark-100 dark:hover:bg-dark-800 hover:text-dark-600
+              text-dark-400 hover:bg-primary-50 dark:hover:bg-dark-800 hover:text-primary-500
               transition-all duration-200
               ${!isOpen && 'justify-center px-0'}
             `}

@@ -108,11 +108,11 @@ export default function Reports() {
       <div className="grid grid-cols-3 gap-4">
         <div className="glass-card rounded-2xl p-4 text-center">
           <p className="text-xs text-dark-500 dark:text-dark-400 mb-1">Total Pemasukan</p>
-          <p className="font-bold text-lg font-display text-primary-600 dark:text-primary-400">{formatCurrency(yearlyTotals.income)}</p>
+          <p className="font-bold text-lg font-display text-accent-600 dark:text-accent-400">{formatCurrency(yearlyTotals.income)}</p>
         </div>
         <div className="glass-card rounded-2xl p-4 text-center">
           <p className="text-xs text-dark-500 dark:text-dark-400 mb-1">Total Pengeluaran</p>
-          <p className="font-bold text-lg font-display text-red-500">{formatCurrency(yearlyTotals.expense)}</p>
+          <p className="font-bold text-lg font-display text-rose-500">{formatCurrency(yearlyTotals.expense)}</p>
         </div>
         <div className="glass-card rounded-2xl p-4 text-center">
           <p className="text-xs text-dark-500 dark:text-dark-400 mb-1">Net</p>

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../utils/categories';
+import DatePicker from './DatePicker';
+import WalletSelect from './WalletSelect';
 
 export default function TransactionForm({ onClose, editData }) {
   const { dispatch, wallets } = useApp();
@@ -45,7 +47,7 @@ export default function TransactionForm({ onClose, editData }) {
           onClick={() => { setType('expense'); setForm(f => ({ ...f, categoryId: '' })); }}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
             type === 'expense'
-              ? 'bg-red-500 text-white shadow-md'
+              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25'
               : 'text-dark-500 dark:text-dark-400 hover:text-dark-700'
           }`}
         >
@@ -56,7 +58,7 @@ export default function TransactionForm({ onClose, editData }) {
           onClick={() => { setType('income'); setForm(f => ({ ...f, categoryId: '' })); }}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
             type === 'income'
-              ? 'bg-primary-500 text-white shadow-md'
+              ? 'bg-primary-500 text-white shadow-md shadow-primary-500/25'
               : 'text-dark-500 dark:text-dark-400 hover:text-dark-700'
           }`}
         >
@@ -112,28 +114,21 @@ export default function TransactionForm({ onClose, editData }) {
       {/* Wallet */}
       <div>
         <label className={labelClass}>Dompet</label>
-        <select
+        <WalletSelect
+          wallets={wallets}
           value={form.walletId}
-          onChange={e => setForm(f => ({ ...f, walletId: e.target.value }))}
+          onChange={(newWalletId) => setForm(f => ({ ...f, walletId: newWalletId }))}
           className={inputClass}
-          required
-        >
-          <option value="">Pilih dompet</option>
-          {wallets.map(w => (
-            <option key={w.id} value={w.id}>{w.name}</option>
-          ))}
-        </select>
+        />
       </div>
 
       {/* Date */}
       <div>
         <label className={labelClass}>Tanggal</label>
-        <input
-          type="date"
+        <DatePicker
           value={form.date}
-          onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+          onChange={(newDate) => setForm(f => ({ ...f, date: newDate }))}
           className={inputClass}
-          required
         />
       </div>
 
@@ -152,7 +147,7 @@ export default function TransactionForm({ onClose, editData }) {
       {/* Submit */}
       <button
         type="submit"
-        className="w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:shadow-lg active:scale-[0.98] gradient-primary"
+        className="w-full py-3 rounded-xl font-semibold text-white transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/25 active:scale-[0.98] gradient-primary"
       >
         {editData ? 'Simpan Perubahan' : 'Tambah Transaksi'}
       </button>

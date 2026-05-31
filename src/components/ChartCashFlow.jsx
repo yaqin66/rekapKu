@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white dark:bg-dark-800 border border-dark-200 dark:border-dark-600 rounded-xl p-3 shadow-lg text-sm">
+      <div className="bg-white dark:bg-dark-800 border border-primary-100 dark:border-dark-600 rounded-xl p-3 shadow-xl text-sm">
         <p className="font-medium mb-1">{label}</p>
         {payload.map((entry, i) => (
           <p key={i} style={{ color: entry.color }} className="text-xs">
@@ -52,14 +52,14 @@ export default function ChartCashFlow({ data }) {
             <Bar
               dataKey="income"
               name="Pemasukan"
-              fill="#22c55e"
+              fill="#14b8a6"
               radius={[6, 6, 0, 0]}
               maxBarSize={32}
             />
             <Bar
               dataKey="expense"
               name="Pengeluaran"
-              fill="#ef4444"
+              fill="#f43f5e"
               radius={[6, 6, 0, 0]}
               maxBarSize={32}
             />

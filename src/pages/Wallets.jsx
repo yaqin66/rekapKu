@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Plus, ArrowLeftRight } from 'lucide-react';
+import { Plus, ArrowLeftRight, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import WalletCard from '../components/WalletCard';
 import Modal from '../components/Modal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import WalletSelect from '../components/WalletSelect';
 import { WALLET_ICONS } from '../utils/categories';
 import { formatCurrency } from '../utils/formatters';
 
@@ -110,15 +112,22 @@ function TransferForm({ onClose }) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-dark-600 dark:text-dark-300 mb-1.5">Dari Dompet</label>
-        <select value={form.fromId} onChange={e => setForm(f => ({ ...f, fromId: e.target.value }))} className={inputClass} required>
-          {wallets.map(w => <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance)})</option>)}
-        </select>
+        <WalletSelect
+          wallets={wallets}
+          value={form.fromId}
+          onChange={(newId) => setForm(f => ({ ...f, fromId: newId }))}
+          className={inputClass}
+          showBalance={true}
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-dark-600 dark:text-dark-300 mb-1.5">Ke Dompet</label>
-        <select value={form.toId} onChange={e => setForm(f => ({ ...f, toId: e.target.value }))} className={inputClass} required>
-          {wallets.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-        </select>
+        <WalletSelect
+          wallets={wallets}
+          value={form.toId}
+          onChange={(newId) => setForm(f => ({ ...f, toId: newId }))}
+          className={inputClass}
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-dark-600 dark:text-dark-300 mb-1.5">Nominal Transfer (Rp)</label>
@@ -132,17 +141,19 @@ function TransferForm({ onClose }) {
 }
 
 export default function Wallets() {
-  const { wallets, dispatch } = useApp();
+  const { wallets, dispatch, isBalanceHidden, toggleBalance } = useApp();
   const [showModal, setShowModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
 
   const totalBalance = wallets.reduce((s, w) => s + w.balance, 0);
 
   const handleEdit = (wallet) => { setEditData(wallet); setShowModal(true); };
-  const handleDelete = (id) => {
-    if (window.confirm('Yakin ingin menghapus dompet ini?')) {
-      dispatch({ type: 'DELETE_WALLET', payload: id });
+  const handleDeleteConfirm = () => {
+    if (deleteId) {
+      dispatch({ type: 'DELETE_WALLET', payload: deleteId });
+      setDeleteId(null);
     }
   };
 
@@ -164,16 +175,25 @@ export default function Wallets() {
       </div>
 
       {/* Total */}
-      <div className="glass-card rounded-2xl p-6 text-center gradient-hero text-white">
+      <div className="relative glass-card rounded-2xl p-6 text-center gradient-hero text-white">
+        <button 
+          onClick={toggleBalance} 
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/20 transition-colors cursor-pointer"
+          title="Sembunyikan/Tampilkan Saldo"
+        >
+          {isBalanceHidden ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+        </button>
         <p className="text-sm opacity-80 mb-1">Total Saldo Semua Dompet</p>
-        <p className="text-3xl font-bold font-display">{formatCurrency(totalBalance)}</p>
+        <p className="text-3xl font-bold font-display">
+          {isBalanceHidden ? 'Rp •••••••' : formatCurrency(totalBalance)}
+        </p>
         <p className="text-xs opacity-70 mt-1">{wallets.length} dompet aktif</p>
       </div>
 
       {/* Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
         {wallets.map(wallet => (
-          <WalletCard key={wallet.id} wallet={wallet} onEdit={handleEdit} onDelete={handleDelete} />
+          <WalletCard key={wallet.id} wallet={wallet} onEdit={handleEdit} onDelete={setDeleteId} />
         ))}
       </div>
 
@@ -184,6 +204,13 @@ export default function Wallets() {
       <Modal isOpen={showTransferModal} onClose={() => setShowTransferModal(false)} title="Transfer Antar Dompet">
         <TransferForm onClose={() => setShowTransferModal(false)} />
       </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDeleteConfirm}
+        itemName="dompet"
+      />
     </div>
   );
 }

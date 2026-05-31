@@ -1,17 +1,87 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/formatters';
-import { Plus, Edit2, Trash2, Target, PlusCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Target, PlusCircle, ChevronDown, Check } from 'lucide-react';
+
+// Custom Wallet Dropdown Component
+function WalletDropdown({ value, onChange, wallets }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedWallet = wallets.find(w => w.id === value);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <div 
+        className="input w-full flex items-center justify-between cursor-pointer focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+        onClick={() => setIsOpen(!isOpen)}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+        }}
+      >
+        <span className={selectedWallet ? "text-dark-900 dark:text-dark-100" : "text-dark-500"}>
+          {selectedWallet ? `${selectedWallet.name} (${formatCurrency(selectedWallet.balance)})` : "Pilih Dompet"}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-dark-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-dark-800 border border-dark-200 dark:border-dark-700 rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-100">
+          <div className="max-h-60 overflow-y-auto">
+            {wallets.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-dark-500 text-center">
+                Belum ada dompet
+              </div>
+            ) : (
+              wallets.map((w) => (
+                <div
+                  key={w.id}
+                  className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors flex items-center justify-between
+                    ${value === w.id ? 'bg-primary-50/50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-medium' : 'text-dark-700 dark:text-dark-300'}`}
+                  onClick={() => {
+                    onChange(w.id);
+                    setIsOpen(false);
+                  }}
+                >
+                  <span>{w.name} <span className={`font-normal ml-1 ${value === w.id ? 'text-primary-500/80' : 'text-dark-400'}`}>({formatCurrency(w.balance)})</span></span>
+                  {value === w.id && <Check className="w-4 h-4" />}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 import Modal from '../components/Modal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 export default function Goals() {
-  const { goals, dispatch } = useApp();
+  const { goals, wallets, dispatch } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
   
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   const [topUpGoal, setTopUpGoal] = useState(null);
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [topUpWalletId, setTopUpWalletId] = useState('');
+  
+  const [deleteId, setDeleteId] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -54,17 +124,36 @@ export default function Goals() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Hapus tujuan ini?')) {
-      await dispatch({ type: 'DELETE_GOAL', payload: id });
+  const handleDelete = async () => {
+    if (deleteId) {
+      await dispatch({ type: 'DELETE_GOAL', payload: deleteId });
+      setDeleteId(null);
     }
   };
 
   const handleTopUpSubmit = async (e) => {
     e.preventDefault();
-    if (!topUpGoal) return;
+    if (!topUpGoal || !topUpWalletId) {
+      alert('Pilih dompet terlebih dahulu!');
+      return;
+    }
     
-    const newAmount = topUpGoal.currentAmount + parseFloat(topUpAmount);
+    const amountAdded = parseFloat(topUpAmount);
+    
+    // Create an expense transaction to deduct the wallet balance
+    await dispatch({
+      type: 'ADD_TRANSACTION',
+      payload: {
+        type: 'expense',
+        amount: amountAdded,
+        categoryId: 'other_expense',
+        walletId: topUpWalletId,
+        description: `Tambah Dana Tujuan: ${topUpGoal.name}`,
+        date: new Date().toISOString()
+      }
+    });
+
+    const newAmount = topUpGoal.currentAmount + amountAdded;
     await dispatch({ 
       type: 'UPDATE_GOAL', 
       payload: { ...topUpGoal, currentAmount: newAmount } 
@@ -78,6 +167,7 @@ export default function Goals() {
   const openTopUp = (goal) => {
     setTopUpGoal(goal);
     setTopUpAmount('');
+    setTopUpWalletId(wallets.length > 0 ? wallets[0].id : '');
     setIsTopUpModalOpen(true);
   };
 
@@ -121,7 +211,7 @@ export default function Goals() {
                   <button onClick={() => openEdit(goal)} className="p-1 text-dark-400 hover:text-primary-500 transition-colors">
                     <Edit2 className="w-4 h-4" />
                   </button>
-                  <button onClick={() => handleDelete(goal.id)} className="p-1 text-dark-400 hover:text-danger-500 transition-colors">
+                  <button onClick={() => setDeleteId(goal.id)} className="p-1 text-dark-400 hover:text-danger-500 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -230,6 +320,14 @@ export default function Goals() {
             <p className="text-sm text-dark-500">Terkumpul saat ini: <span className="font-semibold text-primary-500">{formatCurrency(topUpGoal?.currentAmount || 0)}</span></p>
           </div>
           <div>
+            <label className="block text-sm font-medium mb-1">Ambil dari Dompet</label>
+            <WalletDropdown 
+              value={topUpWalletId} 
+              onChange={setTopUpWalletId} 
+              wallets={wallets} 
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Nominal yang ditambahkan (Rp)</label>
             <input
               type="number"
@@ -251,6 +349,13 @@ export default function Goals() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        itemName="tujuan keuangan"
+      />
     </div>
   );
 }

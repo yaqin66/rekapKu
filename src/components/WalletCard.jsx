@@ -1,13 +1,15 @@
 import { formatCurrency } from '../utils/formatters';
 import { WALLET_ICONS } from '../utils/categories';
 import { Pencil, Trash2 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 export default function WalletCard({ wallet, onEdit, onDelete }) {
+  const { isBalanceHidden } = useApp();
   const IconComponent = WALLET_ICONS[wallet.icon] || WALLET_ICONS.Wallet;
   const isNegative = wallet.balance < 0;
 
   return (
-    <div className="glass-card rounded-2xl p-5 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 group relative overflow-hidden">
+    <div className="glass-card rounded-2xl p-5 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-300 hover:-translate-y-1 group relative overflow-hidden">
       {/* Background accent */}
       <div
         className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10 -translate-y-8 translate-x-8"
@@ -43,7 +45,7 @@ export default function WalletCard({ wallet, onEdit, onDelete }) {
         <p className={`text-2xl font-bold font-display ${
           isNegative ? 'text-red-500' : ''
         }`}>
-          {formatCurrency(wallet.balance)}
+          {isBalanceHidden ? 'Rp •••••••' : formatCurrency(wallet.balance)}
         </p>
       </div>
     </div>

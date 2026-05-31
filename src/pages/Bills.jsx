@@ -3,11 +3,13 @@ import { useApp } from '../context/AppContext';
 import { formatCurrency } from '../utils/formatters';
 import { Plus, Edit2, Trash2, CalendarClock } from 'lucide-react';
 import Modal from '../components/Modal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 export default function Bills() {
   const { bills, wallets, dispatch } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBill, setEditingBill] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -48,9 +50,10 @@ export default function Bills() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Hapus tagihan ini?')) {
-      await dispatch({ type: 'DELETE_BILL', payload: id });
+  const handleDelete = async () => {
+    if (deleteId) {
+      await dispatch({ type: 'DELETE_BILL', payload: deleteId });
+      setDeleteId(null);
     }
   };
 
@@ -97,7 +100,7 @@ export default function Bills() {
                 <button onClick={() => openEdit(bill)} className="p-2 text-dark-400 hover:text-primary-500 transition-colors">
                   <Edit2 className="w-4 h-4" />
                 </button>
-                <button onClick={() => handleDelete(bill.id)} className="p-2 text-dark-400 hover:text-danger-500 transition-colors">
+                <button onClick={() => setDeleteId(bill.id)} className="p-2 text-dark-400 hover:text-danger-500 transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -175,6 +178,13 @@ export default function Bills() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        itemName="tagihan"
+      />
     </div>
   );
 }

@@ -4,12 +4,14 @@ import { useApp } from '../context/AppContext';
 import TransactionList from '../components/TransactionList';
 import TransactionForm from '../components/TransactionForm';
 import Modal from '../components/Modal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { formatCurrency } from '../utils/formatters';
 
 export default function Transactions() {
   const { transactions, dispatch } = useApp();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterMonth, setFilterMonth] = useState(() => {
@@ -57,9 +59,10 @@ export default function Transactions() {
     setShowAddModal(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Yakin ingin menghapus transaksi ini?')) {
-      dispatch({ type: 'DELETE_TRANSACTION', payload: id });
+  const handleDeleteConfirm = () => {
+    if (deleteId) {
+      dispatch({ type: 'DELETE_TRANSACTION', payload: deleteId });
+      setDeleteId(null);
     }
   };
 
@@ -95,7 +98,7 @@ export default function Transactions() {
           </div>
           <div>
             <p className="text-xs text-dark-500 dark:text-dark-400">Pemasukan</p>
-            <p className="font-bold text-primary-600 dark:text-primary-400">{formatCurrency(monthTotals.income)}</p>
+            <p className="font-bold text-accent-600 dark:text-accent-400">{formatCurrency(monthTotals.income)}</p>
           </div>
         </div>
         <div className="glass-card rounded-xl p-4 flex items-center gap-3">
@@ -104,7 +107,7 @@ export default function Transactions() {
           </div>
           <div>
             <p className="text-xs text-dark-500 dark:text-dark-400">Pengeluaran</p>
-            <p className="font-bold text-red-500 dark:text-red-400">{formatCurrency(monthTotals.expense)}</p>
+            <p className="font-bold text-rose-500 dark:text-rose-400">{formatCurrency(monthTotals.expense)}</p>
           </div>
         </div>
       </div>
@@ -156,7 +159,7 @@ export default function Transactions() {
       <TransactionList
         transactions={filteredTransactions}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onDelete={setDeleteId}
       />
 
       {/* Modal */}
@@ -167,6 +170,13 @@ export default function Transactions() {
       >
         <TransactionForm onClose={handleCloseModal} editData={editData} />
       </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDeleteConfirm}
+        itemName="transaksi"
+      />
     </div>
   );
 }

@@ -1,63 +1,62 @@
 import express from 'express';
-import db from '../db.js';
+import pool from '../db.js';
+import { verifyGoogleToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// GET all budgets
-router.get('/', (req, res) => {
+router.use(verifyGoogleToken);
+
+router.get('/', async (req, res) => {
   try {
-    const budgets = db.prepare('SELECT * FROM budgets').all();
-    res.json(budgets);
+    const { rows } = await pool.query('SELECT * FROM budgets WHERE user_email = $1 ORDER BY created_at DESC', [req.user_email]);
+    res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// POST a new budget
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { id, categoryId, limit } = req.body;
   try {
-    const stmt = db.prepare('INSERT INTO budgets (id, categoryId, "limit") VALUES (?, ?, ?)');
-    stmt.run(id, categoryId, limit);
-    const newBudget = db.prepare('SELECT * FROM budgets WHERE id = ?').get(id);
-    res.status(201).json(newBudget);
+    await pool.query(
+      'INSERT INTO budgets (id, "categoryId", "limit", user_email) VALUES ($1, $2, $3, $4)',
+      [id, categoryId, limit, req.user_email]
+    );
+    const { rows } = await pool.query('SELECT * FROM budgets WHERE id = $1 AND user_email = $2', [id, req.user_email]);
+    res.status(201).json(rows[0]);
   } catch (error) {
-    if (error.message.includes('UNIQUE constraint failed')) {
-       return res.status(400).json({ error: 'Budget for this category already exists' });
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Budget for this category already exists' });
     }
     res.status(500).json({ error: error.message });
   }
 });
 
-// PUT (update) a budget
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { categoryId, limit } = req.body;
   try {
-    const stmt = db.prepare('UPDATE budgets SET categoryId = ?, "limit" = ? WHERE id = ?');
-    const result = stmt.run(categoryId, limit, id);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Budget not found' });
-    }
-    const updatedBudget = db.prepare('SELECT * FROM budgets WHERE id = ?').get(id);
-    res.json(updatedBudget);
+    const result = await pool.query(
+      'UPDATE budgets SET "categoryId" = $1, "limit" = $2 WHERE id = $3 AND user_email = $4',
+      [categoryId, limit, id, req.user_email]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Budget not found or unauthorized' });
+    
+    const { rows } = await pool.query('SELECT * FROM budgets WHERE id = $1 AND user_email = $2', [id, req.user_email]);
+    res.json(rows[0]);
   } catch (error) {
-    if (error.message.includes('UNIQUE constraint failed')) {
-       return res.status(400).json({ error: 'Budget for this category already exists' });
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Budget for this category already exists' });
     }
     res.status(500).json({ error: error.message });
   }
 });
 
-// DELETE a budget
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const stmt = db.prepare('DELETE FROM budgets WHERE id = ?');
-    const result = stmt.run(id);
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Budget not found' });
-    }
+    const result = await pool.query('DELETE FROM budgets WHERE id = $1 AND user_email = $2', [id, req.user_email]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Budget not found or unauthorized' });
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
